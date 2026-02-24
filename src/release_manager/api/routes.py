@@ -407,6 +407,62 @@ async def api_export_release(release_id: str, fmt: str, request: Request):
     return _export_report(release.report, fmt)
 
 
+@router.get("/api/export/contributors")
+async def api_export_contributors(request: Request):
+    """Export contributors by component as CSV (draft)."""
+    report: ReleaseReport | None = request.app.state.last_report
+    if not report:
+        return Response("No report available", status_code=404)
+    content = exporter.contributors_to_csv(report)
+    return Response(
+        content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=contributors.csv"},
+    )
+
+
+@router.get("/api/export/commits")
+async def api_export_commits(request: Request):
+    """Export all commits as CSV (draft)."""
+    report: ReleaseReport | None = request.app.state.last_report
+    if not report:
+        return Response("No report available", status_code=404)
+    content = exporter.commits_to_csv(report)
+    return Response(
+        content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=commits.csv"},
+    )
+
+
+@router.get("/api/releases/{release_id}/export/contributors")
+async def api_export_release_contributors(release_id: str, request: Request):
+    """Export contributors by component as CSV (saved release)."""
+    release = _find_release(request, release_id)
+    if not release:
+        return Response("Release not found", status_code=404)
+    content = exporter.contributors_to_csv(release.report)
+    return Response(
+        content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=contributors.csv"},
+    )
+
+
+@router.get("/api/releases/{release_id}/export/commits")
+async def api_export_release_commits(release_id: str, request: Request):
+    """Export all commits as CSV (saved release)."""
+    release = _find_release(request, release_id)
+    if not release:
+        return Response("Release not found", status_code=404)
+    content = exporter.commits_to_csv(release.report)
+    return Response(
+        content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=commits.csv"},
+    )
+
+
 # ── HTMX Partials ─────────────────────────────────────────────
 
 
@@ -642,5 +698,5 @@ async def partial_refresh_report(request: Request):
     request.app.state.last_report = report
     return _templates(request).TemplateResponse(
         "partials/report_content.html",
-        {"request": request, "report": report},
+        {"request": request, "report": report, "export_base": "/api/export"},
     )

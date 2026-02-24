@@ -76,6 +76,7 @@
     </div>
 
     {% set report = release.report %}
+    {% set export_base = "/api/releases/" ~ release.id ~ "/export" %}
     {% include "partials/report_content.html" %}
 </div>
 
