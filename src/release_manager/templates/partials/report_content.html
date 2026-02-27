@@ -34,14 +34,46 @@
 {# ── Tab: Tasks (grouped by component) ────────────────── #}
 <div id="tab-tasks" class="tab-panel">
     {% if report.all_linear_keys %}
+    <!-- Toolbar: search + Load Linear + copy -->
+    <div class="flex items-center gap-2 mb-4">
+        <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+            </svg>
+            <input type="text" id="tasks-search" oninput="filterTasks(this.value)" placeholder="Search tasks..."
+                   class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700
+                          bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100
+                          placeholder-gray-400 dark:placeholder-gray-500
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-colors">
+        </div>
+        <span id="linear-loading-indicator"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-violet-500 dark:text-violet-400">
+            <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            Loading Linear...
+        </span>
+        <button onclick="copyExport('tasks')"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
+                       border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1d26]
+                       text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252830]
+                       transition-colors whitespace-nowrap"
+                title="Copy as CSV">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/>
+            </svg>
+            Copy
+        </button>
+    </div>
+
     {% for repo in report.repos %}
-        {# Collect linear keys for this repo #}
         {% set repo_keys = [] %}
         {% for key in repo.linear_keys %}
             {% if repo_keys.append(key) %}{% endif %}
         {% endfor %}
         {% if repo_keys %}
-        <div class="mb-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1d26] overflow-hidden">
+        <div class="mb-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1d26] overflow-hidden task-component-block">
             <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800
                         bg-gray-50/50 dark:bg-transparent">
                 <div class="flex items-center gap-3">
@@ -55,26 +87,35 @@
                     {{ repo_keys|length }} task{{ 's' if repo_keys|length != 1 else '' }}
                 </span>
             </div>
-            <table class="w-full text-left">
+            <table class="w-full text-left task-table">
                 <thead>
                     <tr class="border-b border-gray-100 dark:border-gray-800">
-                        <th class="px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Linear Key</th>
-                        <th class="px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Contributors</th>
+                        <th class="px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 w-[120px]">Key</th>
+                        <th class="px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Title</th>
+                        <th class="px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 w-[100px]">Status</th>
+                        <th class="px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 w-[200px]">Contributors</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                     {% for key in repo_keys %}
-                    <tr class="hover:bg-gray-50/50 dark:hover:bg-[#252830]/50">
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-[#252830]/50 task-row" data-key="{{ key }}">
                         <td class="px-4 py-2.5">
                             <button onclick="openIssuePanel('{{ key }}')"
-                               class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full
+                               class="inline-flex items-center whitespace-nowrap px-2.5 py-0.5 text-xs font-medium rounded-full
                                       bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300
                                       hover:bg-violet-200 dark:hover:bg-violet-500/30 transition-colors cursor-pointer">
                                 {{ key }}
-                                <svg class="w-3 h-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
-                                </svg>
                             </button>
+                        </td>
+                        <td class="px-4 py-2.5 truncate">
+                            <span class="linear-title text-xs text-gray-600 dark:text-gray-400" data-key="{{ key }}">
+                                <span class="skeleton inline-block h-3 w-32 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"></span>
+                            </span>
+                        </td>
+                        <td class="px-4 py-2.5">
+                            <span class="linear-status text-[11px] font-medium" data-key="{{ key }}">
+                                <span class="skeleton inline-block h-3 w-14 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"></span>
+                            </span>
                         </td>
                         <td class="px-4 py-2.5">
                             <div class="flex flex-wrap gap-1.5">
@@ -111,17 +152,38 @@
 
 {# ── Tab: Contributors by Component ───────────────────── #}
 <div id="tab-contributors" class="tab-panel hidden">
-    <div class="flex justify-end mb-3">
+    <div class="flex items-center gap-2 mb-3">
+        <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+            </svg>
+            <input type="text" oninput="filterTable('tab-contributors', this.value)" placeholder="Search contributors..."
+                   class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700
+                          bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100
+                          placeholder-gray-400 dark:placeholder-gray-500
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-colors">
+        </div>
         <a href="{{ export_base }}/contributors"
            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
                   border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1d26]
                   text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252830]
-                  transition-colors">
+                  transition-colors whitespace-nowrap">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
             </svg>
             Export CSV
         </a>
+        <button onclick="copyExport('contributors')"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
+                       border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1d26]
+                       text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252830]
+                       transition-colors whitespace-nowrap"
+                title="Copy as CSV">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/>
+            </svg>
+            Copy
+        </button>
     </div>
     <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1d26] overflow-hidden">
         <table class="w-full text-left">
@@ -135,7 +197,7 @@
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                 {% for repo in report.repos %}
                 {% set authors = repo.commits | map(attribute='author') | unique | list | filter_humans %}
-                <tr class="hover:bg-gray-50/50 dark:hover:bg-[#252830]/50">
+                <tr class="hover:bg-gray-50/50 dark:hover:bg-[#252830]/50 searchable-row">
                     <td class="px-4 py-2.5 text-sm font-medium text-gray-900 dark:text-gray-100">{{ repo.repo_name }}</td>
                     <td class="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400">{{ repo.from_tag }} &rarr; {{ repo.to_tag }}</td>
                     <td class="px-4 py-2.5">
@@ -163,22 +225,43 @@
 
 {# ── Tab: Commits (collapsible per repo) ──────────────── #}
 <div id="tab-commits" class="tab-panel hidden">
-    <div class="flex justify-end mb-3">
+    <div class="flex items-center gap-2 mb-3">
+        <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+            </svg>
+            <input type="text" oninput="filterCommits(this.value)" placeholder="Search commits..."
+                   class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700
+                          bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100
+                          placeholder-gray-400 dark:placeholder-gray-500
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-colors">
+        </div>
         <a href="{{ export_base }}/commits"
            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
                   border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1d26]
                   text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252830]
-                  transition-colors">
+                  transition-colors whitespace-nowrap">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
             </svg>
             Export CSV
         </a>
+        <button onclick="copyExport('commits')"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
+                       border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1d26]
+                       text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252830]
+                       transition-colors whitespace-nowrap"
+                title="Copy as CSV">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/>
+            </svg>
+            Copy
+        </button>
     </div>
     {% for repo in report.repos %}
     {% set authors = repo.commits | map(attribute='author') | unique | list | filter_humans %}
     <div class="mb-4 rounded-xl border border-gray-200 dark:border-gray-800
-                bg-white dark:bg-[#1a1d26] overflow-hidden">
+                bg-white dark:bg-[#1a1d26] overflow-hidden commit-block">
         <button onclick="this.nextElementSibling.classList.toggle('open'); this.querySelector('.chevron').classList.toggle('rotate-90')"
                 class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#252830] transition-colors text-left">
             <div class="flex items-center gap-3">
@@ -222,7 +305,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                     {% for commit in repo.commits %}
-                    <tr class="hover:bg-gray-50/50 dark:hover:bg-[#252830]/50">
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-[#252830]/50 commit-row">
                         <td class="px-4 py-1.5 text-xs">
                             <code class="text-indigo-600 dark:text-indigo-400 font-mono">{{ commit.short_hash }}</code>
                         </td>
@@ -255,24 +338,21 @@
 <div id="issue-panel-backdrop" onclick="closeIssuePanel()"
      class="fixed inset-0 bg-black/30 dark:bg-black/50 z-40 hidden opacity-0 transition-opacity duration-200"></div>
 <div id="issue-panel"
-     class="fixed top-0 right-0 h-full w-[480px] max-w-[90vw] z-50
+     class="fixed top-0 right-0 h-full w-[520px] max-w-[90vw] z-50
             bg-white dark:bg-[#1a1d26] border-l border-gray-200 dark:border-gray-800
             shadow-2xl transform translate-x-full transition-transform duration-200 ease-out
             flex flex-col overflow-hidden">
     <!-- Header -->
-    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-800">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-gray-800 shrink-0">
         <div class="flex items-center gap-2.5 min-w-0">
-            <span id="ip-identifier"
-                  class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full shrink-0
+            <span id="ip-identifier" class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full shrink-0
                          bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300"></span>
-            <span id="ip-status"
-                  class="inline-flex px-2 py-0.5 text-[11px] font-medium rounded-full shrink-0"></span>
+            <span id="ip-status" class="inline-flex px-2 py-0.5 text-[11px] font-medium rounded-full shrink-0"></span>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-1 shrink-0">
             <a id="ip-linear-link" href="#" target="_blank" rel="noopener"
                class="p-1.5 rounded-lg text-gray-400 hover:text-violet-600 dark:hover:text-violet-400
-                      hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-               title="Open in Linear">
+                      hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Open in Linear">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
                 </svg>
@@ -286,14 +366,14 @@
             </button>
         </div>
     </div>
-    <!-- Loading state -->
+    <!-- Loading -->
     <div id="ip-loading" class="flex-1 flex items-center justify-center">
         <svg class="animate-spin w-6 h-6 text-violet-500" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
     </div>
-    <!-- Error state -->
+    <!-- Error -->
     <div id="ip-error" class="flex-1 items-center justify-center text-center px-6 hidden">
         <div>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-2" id="ip-error-msg">Could not load issue details.</p>
@@ -302,50 +382,43 @@
     </div>
     <!-- Content -->
     <div id="ip-content" class="flex-1 overflow-y-auto hidden">
-        <div class="px-5 py-4 space-y-5">
+        <div class="px-5 py-4 space-y-4">
             <!-- Title -->
-            <h2 id="ip-title" class="text-base font-semibold text-gray-900 dark:text-gray-100 leading-snug"></h2>
-
-            <!-- Meta row -->
-            <div class="flex flex-wrap gap-3">
+            <h2 id="ip-title" class="text-[15px] font-semibold text-gray-900 dark:text-gray-100 leading-snug"></h2>
+            <!-- Meta grid -->
+            <div id="ip-meta" class="grid grid-cols-2 gap-x-4 gap-y-2.5 p-3 rounded-lg bg-gray-50 dark:bg-[#0f1117] border border-gray-100 dark:border-gray-800">
                 <div id="ip-priority-wrap" class="hidden">
-                    <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Priority</span>
-                    <span id="ip-priority" class="text-sm text-gray-700 dark:text-gray-300"></span>
+                    <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Priority</span>
+                    <span id="ip-priority" class="text-xs font-medium text-gray-700 dark:text-gray-300"></span>
                 </div>
                 <div id="ip-assignee-wrap" class="hidden">
-                    <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Assignee</span>
-                    <span id="ip-assignee" class="text-sm text-gray-700 dark:text-gray-300"></span>
+                    <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Assignee</span>
+                    <span id="ip-assignee" class="text-xs font-medium text-gray-700 dark:text-gray-300"></span>
                 </div>
                 <div id="ip-project-wrap" class="hidden">
-                    <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Project</span>
-                    <span id="ip-project" class="text-sm text-gray-700 dark:text-gray-300"></span>
+                    <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Project</span>
+                    <span id="ip-project" class="text-xs font-medium text-gray-700 dark:text-gray-300"></span>
                 </div>
                 <div id="ip-dates-wrap" class="hidden">
-                    <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Created</span>
-                    <span id="ip-created" class="text-sm text-gray-700 dark:text-gray-300 tabular-nums"></span>
+                    <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Created</span>
+                    <span id="ip-created" class="text-xs font-medium text-gray-700 dark:text-gray-300 tabular-nums"></span>
                 </div>
             </div>
-
             <!-- Labels -->
             <div id="ip-labels-wrap" class="hidden">
-                <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">Labels</span>
                 <div id="ip-labels" class="flex flex-wrap gap-1.5"></div>
             </div>
-
-            <!-- Description -->
+            <!-- Description (Markdown) -->
             <div id="ip-desc-wrap" class="hidden">
                 <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">Description</span>
-                <div id="ip-desc" class="prose prose-sm dark:prose-invert max-w-none text-sm text-gray-700 dark:text-gray-300
-                                         whitespace-pre-wrap break-words leading-relaxed"></div>
+                <div id="ip-desc" class="md-content text-gray-700 dark:text-gray-300"></div>
             </div>
-
-            <!-- Related issues -->
+            <!-- Related Issues -->
             <div id="ip-relations-wrap" class="hidden">
                 <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">Related Issues</span>
                 <div id="ip-relations" class="space-y-1.5"></div>
             </div>
-
-            <!-- Comments -->
+            <!-- Comments (Markdown) -->
             <div id="ip-comments-wrap" class="hidden">
                 <span class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">Comments</span>
                 <div id="ip-comments" class="space-y-3"></div>
@@ -362,6 +435,100 @@ function switchTab(name) {
     document.querySelector(`.tab-btn[data-tab="${name}"]`)?.classList.add('active');
 }
 
+/* ── Search / Filter ─────────────────────────────────── */
+function filterTasks(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.task-row').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+function filterTable(tabId, query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll(`#${tabId} .searchable-row`).forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+function filterCommits(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.commit-row').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+/* ── Copy to clipboard ───────────────────────────────── */
+async function copyExport(type) {
+    let url;
+    const base = '{{ export_base }}';
+    if (type === 'tasks') url = base + '/csv';
+    else if (type === 'contributors') url = base + '/contributors';
+    else if (type === 'commits') url = base + '/commits';
+    try {
+        const resp = await fetch(url);
+        const text = await resp.text();
+        await navigator.clipboard.writeText(text);
+        if (typeof showToast === 'function') showToast('Copied to clipboard', 'success');
+    } catch(e) {
+        if (typeof showToast === 'function') showToast('Copy failed', 'error');
+    }
+}
+
+/* ── Load Linear Data (titles + status inline) ───────── */
+let _linearLoaded = false;
+
+async function loadAllLinearData() {
+    if (_linearLoaded) return;
+    _linearLoaded = true;
+
+    const keys = [...new Set([...document.querySelectorAll('.task-row')].map(r => r.dataset.key))];
+    const indicator = document.getElementById('linear-loading-indicator');
+    if (!keys.length) {
+        if (indicator) indicator.remove();
+        return;
+    }
+
+    try {
+        const resp = await fetch('/api/linear/issues', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({keys})
+        });
+        if (!resp.ok) throw new Error('API error');
+        const data = await resp.json();
+
+        for (const [key, issue] of Object.entries(data)) {
+            _issueCache[key] = issue;
+            document.querySelectorAll(`.linear-title[data-key="${key}"]`).forEach(el => {
+                el.textContent = issue.title || '';
+                el.title = issue.title || '';
+            });
+            document.querySelectorAll(`.linear-status[data-key="${key}"]`).forEach(el => {
+                if (issue.status) {
+                    el.textContent = issue.status;
+                    el.className = 'linear-status inline-flex px-2 py-0.5 text-[11px] font-medium rounded-full';
+                    el.style.backgroundColor = (issue.status_color || '#8b5cf6') + '20';
+                    el.style.color = issue.status_color || '#8b5cf6';
+                }
+            });
+        }
+
+        /* Clear skeletons for keys not found in Linear */
+        document.querySelectorAll('.skeleton').forEach(el => el.remove());
+    } catch(e) {
+        _linearLoaded = false;
+        /* Clear skeletons on error, show dash */
+        document.querySelectorAll('.linear-title .skeleton').forEach(el => {
+            el.parentElement.textContent = '—';
+        });
+        document.querySelectorAll('.linear-status .skeleton').forEach(el => {
+            el.parentElement.textContent = '—';
+        });
+    } finally {
+        if (indicator) indicator.remove();
+    }
+}
+
 /* ── Linear issue slide-over ─────────────────────────── */
 const _issueCache = {};
 
@@ -371,6 +538,19 @@ function escapeHtml(text) {
     return d.innerHTML;
 }
 
+/* Render markdown to sanitized HTML */
+function renderMd(text) {
+    if (!text) return '';
+    if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+        const raw = marked.parse(text, { breaks: true, gfm: true });
+        return DOMPurify.sanitize(raw, {
+            ADD_TAGS: ['img'],
+            ADD_ATTR: ['target', 'rel', 'src', 'alt', 'loading'],
+        });
+    }
+    return escapeHtml(text).replace(/\n/g, '<br>');
+}
+
 function openIssuePanel(key) {
     const panel = document.getElementById('issue-panel');
     const backdrop = document.getElementById('issue-panel-backdrop');
@@ -378,18 +558,15 @@ function openIssuePanel(key) {
     const content = document.getElementById('ip-content');
     const error = document.getElementById('ip-error');
 
-    // Set identifier immediately
     document.getElementById('ip-identifier').textContent = key;
     document.getElementById('ip-linear-link').href = 'https://linear.app/aiphoria-ai/issue/' + key;
 
-    // Show panel
     backdrop.classList.remove('hidden');
     requestAnimationFrame(() => {
         backdrop.classList.remove('opacity-0');
         panel.classList.remove('translate-x-full');
     });
 
-    // Check cache
     if (_issueCache[key]) {
         loading.classList.add('hidden');
         error.classList.add('hidden');
@@ -398,7 +575,6 @@ function openIssuePanel(key) {
         return;
     }
 
-    // Show loading
     loading.classList.remove('hidden');
     content.classList.add('hidden');
     error.classList.add('hidden');
@@ -423,51 +599,38 @@ function openIssuePanel(key) {
 }
 
 function closeIssuePanel() {
-    const panel = document.getElementById('issue-panel');
+    document.getElementById('issue-panel').classList.add('translate-x-full');
     const backdrop = document.getElementById('issue-panel-backdrop');
-    panel.classList.add('translate-x-full');
     backdrop.classList.add('opacity-0');
     setTimeout(() => backdrop.classList.add('hidden'), 200);
 }
 
-// Close on Escape
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeIssuePanel();
-});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeIssuePanel(); });
 
 function _renderIssue(d) {
-    // Title
     document.getElementById('ip-title').textContent = d.title || 'Untitled';
 
-    // Status badge
     const statusEl = document.getElementById('ip-status');
     if (d.status) {
         statusEl.textContent = d.status;
         statusEl.style.backgroundColor = (d.status_color || '#8b5cf6') + '20';
         statusEl.style.color = d.status_color || '#8b5cf6';
         statusEl.classList.remove('hidden');
-    } else {
-        statusEl.classList.add('hidden');
-    }
+    } else { statusEl.classList.add('hidden'); }
 
-    // Priority
-    _showOrHide('ip-priority-wrap', 'ip-priority', d.priority);
-
-    // Assignee
-    _showOrHide('ip-assignee-wrap', 'ip-assignee', d.assignee);
-
-    // Project
-    _showOrHide('ip-project-wrap', 'ip-project', d.project);
-
-    // Created date
+    /* Meta fields */
+    let hasAnyMeta = false;
+    hasAnyMeta = _showOrHide('ip-priority-wrap', 'ip-priority', d.priority) || hasAnyMeta;
+    hasAnyMeta = _showOrHide('ip-assignee-wrap', 'ip-assignee', d.assignee) || hasAnyMeta;
+    hasAnyMeta = _showOrHide('ip-project-wrap', 'ip-project', d.project) || hasAnyMeta;
     if (d.created_at) {
         document.getElementById('ip-dates-wrap').classList.remove('hidden');
         document.getElementById('ip-created').textContent = new Date(d.created_at).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'});
-    } else {
-        document.getElementById('ip-dates-wrap').classList.add('hidden');
-    }
+        hasAnyMeta = true;
+    } else { document.getElementById('ip-dates-wrap').classList.add('hidden'); }
+    document.getElementById('ip-meta').classList.toggle('hidden', !hasAnyMeta);
 
-    // Labels
+    /* Labels */
     const labelsWrap = document.getElementById('ip-labels-wrap');
     const labelsEl = document.getElementById('ip-labels');
     if (d.labels && d.labels.length) {
@@ -476,21 +639,25 @@ function _renderIssue(d) {
                    style="background:${escapeHtml(l.color || '#6b7280')}20;color:${escapeHtml(l.color || '#6b7280')}">${escapeHtml(l.name)}</span>`
         ).join('');
         labelsWrap.classList.remove('hidden');
-    } else {
-        labelsWrap.classList.add('hidden');
-    }
+    } else { labelsWrap.classList.add('hidden'); }
 
-    // Description
+    /* Description — rendered as Markdown */
     const descWrap = document.getElementById('ip-desc-wrap');
-    const descEl = document.getElementById('ip-desc');
     if (d.description) {
-        descEl.textContent = d.description;
+        document.getElementById('ip-desc').innerHTML = renderMd(d.description);
+        /* Make all links in description open in new tab */
+        document.querySelectorAll('#ip-desc a').forEach(a => {
+            a.setAttribute('target', '_blank');
+            a.setAttribute('rel', 'noopener');
+        });
+        /* Lazy-load images */
+        document.querySelectorAll('#ip-desc img').forEach(img => {
+            img.setAttribute('loading', 'lazy');
+        });
         descWrap.classList.remove('hidden');
-    } else {
-        descWrap.classList.add('hidden');
-    }
+    } else { descWrap.classList.add('hidden'); }
 
-    // Relations
+    /* Related Issues */
     const relWrap = document.getElementById('ip-relations-wrap');
     const relEl = document.getElementById('ip-relations');
     if (d.relations && d.relations.length) {
@@ -498,37 +665,31 @@ function _renderIssue(d) {
             `<div class="flex items-center gap-2 text-sm">
                 <span class="text-[10px] uppercase font-medium text-gray-400 dark:text-gray-500 w-16 shrink-0">${escapeHtml(r.type)}</span>
                 <button onclick="openIssuePanel('${escapeHtml(r.identifier)}')"
-                        class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full
-                               bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300
-                               hover:bg-violet-200 dark:hover:bg-violet-500/30 transition-colors cursor-pointer">
+                        class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-500/30 transition-colors cursor-pointer">
                     ${escapeHtml(r.identifier)}
                 </button>
                 <span class="text-xs text-gray-600 dark:text-gray-400 truncate">${escapeHtml(r.title)}</span>
             </div>`
         ).join('');
         relWrap.classList.remove('hidden');
-    } else {
-        relWrap.classList.add('hidden');
-    }
+    } else { relWrap.classList.add('hidden'); }
 
-    // Comments
+    /* Comments — rendered as Markdown */
     const comWrap = document.getElementById('ip-comments-wrap');
     const comEl = document.getElementById('ip-comments');
     if (d.comments && d.comments.length) {
         comEl.innerHTML = d.comments.map(c => {
             const date = c.created_at ? new Date(c.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
             return `<div class="p-3 rounded-lg bg-gray-50 dark:bg-[#0f1117] border border-gray-100 dark:border-gray-800">
-                <div class="flex items-center gap-2 mb-1.5">
-                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">${escapeHtml(c.author || 'Unknown')}</span>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">${escapeHtml(c.author || 'Unknown')}</span>
                     <span class="text-[11px] text-gray-400 dark:text-gray-500">${escapeHtml(date)}</span>
                 </div>
-                <div class="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap break-words leading-relaxed">${escapeHtml(c.body || '')}</div>
+                <div class="md-content text-gray-600 dark:text-gray-400">${renderMd(c.body || '')}</div>
             </div>`;
         }).join('');
         comWrap.classList.remove('hidden');
-    } else {
-        comWrap.classList.add('hidden');
-    }
+    } else { comWrap.classList.add('hidden'); }
 }
 
 function _showOrHide(wrapId, textId, value) {
@@ -536,8 +697,12 @@ function _showOrHide(wrapId, textId, value) {
     if (value) {
         document.getElementById(textId).textContent = value;
         wrap.classList.remove('hidden');
-    } else {
-        wrap.classList.add('hidden');
+        return true;
     }
+    wrap.classList.add('hidden');
+    return false;
 }
+
+/* Auto-load Linear data on page load */
+loadAllLinearData();
 </script>

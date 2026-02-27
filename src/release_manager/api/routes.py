@@ -23,6 +23,15 @@ def _templates(request: Request):
     return request.app.state.templates
 
 
+def _last_release_tags(request: Request) -> dict[str, str]:
+    """Return {repo_name: to_tag} from the most recent saved release."""
+    releases: list[Release] = request.app.state.releases
+    if not releases:
+        return {}
+    latest = releases[-1]
+    return {r.repo_name: r.to_tag for r in latest.report.repos}
+
+
 def _build_report(root_dir: str, selections: list[RepoSelection]) -> ReleaseReport:
     """Build a ReleaseReport from a list of repo selections."""
     repo_reports: list[RepoReport] = []
@@ -106,6 +115,38 @@ async def releases_page(request: Request):
         {
             "request": request,
             "releases": list(reversed(releases)),
+            "active_page": "releases",
+        },
+    )
+
+
+@router.get("/releases/diff", response_class=HTMLResponse)
+async def release_diff_page(request: Request):
+    a_id = request.query_params.get("a", "")
+    b_id = request.query_params.get("b", "")
+    release_a = _find_release(request, a_id)
+    release_b = _find_release(request, b_id)
+
+    diff = None
+    if release_a and release_b:
+        keys_a = set(release_a.report.all_linear_keys)
+        keys_b = set(release_b.report.all_linear_keys)
+        added = sorted(keys_b - keys_a)
+        removed = sorted(keys_a - keys_b)
+        common = sorted(keys_a & keys_b)
+        diff = {
+            "added": added,
+            "removed": removed,
+            "common": common,
+        }
+
+    return _templates(request).TemplateResponse(
+        "release_diff.html",
+        {
+            "request": request,
+            "release_a": release_a,
+            "release_b": release_b,
+            "diff": diff,
             "active_page": "releases",
         },
     )
@@ -514,7 +555,13 @@ async def partial_repo_list(request: Request):
 
     return _templates(request).TemplateResponse(
         "partials/repo_list.html",
-        {"request": request, "repos": repos, "root_dir": root_dir, "repo_tags": repo_tags},
+        {
+            "request": request,
+            "repos": repos,
+            "root_dir": root_dir,
+            "repo_tags": repo_tags,
+            "last_tags": _last_release_tags(request),
+        },
     )
 
 
@@ -580,7 +627,13 @@ async def partial_fetch_and_reload(request: Request):
 
     return _templates(request).TemplateResponse(
         "partials/repo_list.html",
-        {"request": request, "repos": repos, "root_dir": root_dir, "repo_tags": repo_tags},
+        {
+            "request": request,
+            "repos": repos,
+            "root_dir": root_dir,
+            "repo_tags": repo_tags,
+            "last_tags": _last_release_tags(request),
+        },
     )
 
 
@@ -601,6 +654,7 @@ async def partial_remote_repo_list(request: Request):
             "request": request,
             "app_config": config,
             "repo_tags": repo_tags,
+            "last_tags": _last_release_tags(request),
         },
     )
 
@@ -708,6 +762,7 @@ async def partial_remote_sync_all(request: Request):
             "request": request,
             "app_config": config,
             "repo_tags": repo_tags,
+            "last_tags": _last_release_tags(request),
         },
     )
 

@@ -104,8 +104,10 @@
                                        bg-gray-50 dark:bg-[#0f1117] text-gray-700 dark:text-gray-300
                                        focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500">
                             <option value="">-- from --</option>
+                            {% set pin = last_tags.get(repo.name, '') if last_tags is defined else '' %}
                             {% for tag in tags %}
-                            <option value="{{ tag.name }}" {% if loop.index == 2 %}selected{% endif %}>
+                            <option value="{{ tag.name }}"
+                                {% if pin %}{% if tag.name == pin %}selected{% endif %}{% elif loop.index == 2 %}selected{% endif %}>
                                 {{ tag.name }}{% if tag.is_release %} *{% endif %}
                             </option>
                             {% endfor %}
