@@ -252,20 +252,24 @@ When your changes span multiple categories (docs, tests, implementation), consid
 - **Git Bisect**: Pinpoint exactly which commit introduced a bug
 - **Changelog**: Each commit type appears in the right changelog section
 
-**Recommended commit order:**
+**Commit ordering principle:** Every commit in a PR must leave the branch in a stable state — CI passes, lint rules are satisfied, tests pass for the code present at that point. Undocumented or untested code is acceptable; broken CI/lint is not.
 
-1. `docs` — Documentation first (context for reviewers)
-2. `test` — Tests before implementation
+**Default commit order:**
+
+1. `ci` — CI/CD pipeline changes (establish the rules first)
+2. `chore`/`build` — Configuration and dependencies
 3. `feat`/`fix`/`refactor` — Main implementation
-4. `chore`/`build` — Configuration and dependencies
-5. `ci` — CI/CD changes last
+4. `test` — Tests verify implementation
+5. `docs` — Documentation (informational, never breaks stability)
+
+This is the default for the common case. Deviate when specific changes require a different order to maintain stability at every checkout.
 
 **Example:** If you add a feature with tests and docs, create 3 commits:
 
 ```
-docs(auth): add jwt validation documentation
-test(auth): add jwt validation tests
 feat(auth): implement jwt validation
+test(auth): add jwt validation tests
+docs(auth): add jwt validation documentation
 ```
 
 > TIP: Use `/platform:create-commit` slash command to generate commit message.
@@ -375,6 +379,10 @@ This enables better voice quality for non-English languages.
 - Added language_engine_map config option
 - Falls back to default engine if no mapping exists
 
+---
+
+**Issues:**
+
 Closes PLCORE-749
 ```
 
@@ -393,7 +401,10 @@ Magic words link **additional** Linear issues to the PR beyond the one already l
 **Multiple issues:**
 
 ```markdown
-Closes PLCORE-123, Closes PLCORE-124
+**Issues:**
+
+Closes PLCORE-123
+Closes PLCORE-124
 Part of PLCORE-100
 ```
 
@@ -453,6 +464,10 @@ This enables better voice quality for non-English languages.
 - Added language_engine_map config option
 - Falls back to default engine if no mapping exists
 
+---
+
+**Issues:**
+
 Closes PLCORE-749
 ```
 
@@ -461,6 +476,10 @@ Closes PLCORE-749
 ```
 ASR requests were all hitting the same pod due to missing gRPC options.
 This caused uneven load distribution and occasional timeouts.
+
+---
+
+**Issues:**
 
 Closes PLCORE-715
 ```
@@ -474,6 +493,10 @@ before user interruption. This data is required for billing accuracy.
 - FinishTransferringPlaybackEvent
 - StartTransferringPlaybackEvent
 
+---
+
+**Issues:**
+
 Closes VUX-20
 ```
 
@@ -486,6 +509,10 @@ is now fully migrated to grpcio.
 - No functional changes
 - All existing tests pass
 
+---
+
+**Issues:**
+
 Part of PLCORE-600
 Closes PLCORE-605
 ```
@@ -495,6 +522,10 @@ Closes PLCORE-605
 ```
 Direct integrations with Google, Aiphoria v1, Audiogram, and Deepgram
 are no longer used. All ASR now goes through the unified provider interface.
+
+---
+
+**Issues:**
 
 Closes PLCORE-607
 ```
