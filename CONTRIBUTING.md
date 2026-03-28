@@ -1,6 +1,6 @@
-# Contributing to Aiphoria
+# Contributing to Acclaim
 
-Thank you for your interest in contributing to Aiphoria! This guide will help you get started.
+Thank you for your interest in contributing to Acclaim! This guide will help you get started.
 
 **Audience:** These guidelines apply to all contributors—human developers and AI coding assistants alike.
 
@@ -20,7 +20,7 @@ All contributors must adhere to our [Code of Conduct](./CODE_OF_CONDUCT.md). Ple
 
 ## Quick Start
 
-💡 If you are using Claude as code assistant, please use `platform-engineering plugin` to get the best experience. It contains all the tools and knowledge to help you follow the standards and guidelines. Read original plugin documentation [here](https://github.com/ToolsAiforia/platform-engineering/blob/main/claude-plugins/platform/README.md).
+💡 If you are using Claude as code assistant, please use `platform-engineering plugin` to get the best experience. It contains all the tools and knowledge to help you follow the standards and guidelines. Read original plugin documentation [here](https://github.com/acclaim-ai/platform-engineering/blob/main/claude-plugins/platform/README.md).
 
 ### Prerequisites
 
@@ -47,7 +47,7 @@ Read [platform.meta.yml](./platform.meta.yml) to get the team's communication ch
    - Expected vs actual behavior
    - Environment details
 
-> TIP: Use [Bug Report](https://linear.app/aiphoria-ai/team/QA/new?template=3253b758-2830-4302-8bc1-991617e780cd) issue template in Linear to create a bug report.
+> TIP: Use [Bug Report](https://linear.app/acclaim-ai/team/QA/new?template=3253b758-2830-4302-8bc1-991617e780cd) issue template in Linear to create a bug report.
 
 ### Suggesting Features
 
@@ -55,7 +55,7 @@ Read [platform.meta.yml](./platform.meta.yml) to get the team's communication ch
 2. Describe the use case and proposed solution
 3. Wait for feedback before starting implementation
 
-> TIP: Use [Feature Request](https://linear.app/aiphoria-ai/team/PL/new?template=4ad8c9d5-fb4e-4bb0-85f1-8ffc9aab0060) issue template in Linear to create a feature request.
+> TIP: Use [Feature Request](https://linear.app/acclaim-ai/team/PL/new?template=4ad8c9d5-fb4e-4bb0-85f1-8ffc9aab0060) issue template in Linear to create a feature request.
 
 ### Submitting Code
 
@@ -114,13 +114,13 @@ Some changes don't require a Linear issue (see [Special PR Prefixes](#special-pr
 - ✅ `trivial-fix-typo-readme`
 - ✅ `maintenance-upgrade-node-22`
 
-⚠️ This rule is enforced by [automated PR validation](https://github.com/ToolsAiforia/contributing-action). Invalid branch names block PR merge.
+⚠️ This rule is enforced by [automated PR validation](https://github.com/acclaim-ai/contributing-action). Invalid branch names block PR merge.
 
-> TIP: Use `/platform:create-branch` slash command to generate branch name.
+> TIP: Use `/platform:branch:create` slash command to generate branch name.
 
 **Release Branches:**
 
-Automated release workflows create branches that don't follow the standard `<issue-id>-<short-description>` format. These are created by [release-action](https://github.com/ToolsAiforia/release-action) and platform delivery workflows. See [Unified Release & Platform Delivery Process](https://github.com/ToolsAiforia/platform-engineering/blob/main/docs/rfc/PlatformReleaseStandard.md) for details.
+Automated release workflows create branches that don't follow the standard `<issue-id>-<short-description>` format. These are created by [release-action](https://github.com/acclaim-ai/release-action) and platform delivery workflows. See [Unified Release & Platform Delivery Process](https://github.com/acclaim-ai/platform-engineering/blob/main/docs/rfc/PlatformReleaseStandard.md) for details.
 
 ```
 release-<version>
@@ -242,7 +242,7 @@ wip
 btw
 ```
 
-⚠️ This rule is enforced by [automated PR validation](https://github.com/ToolsAiforia/contributing-action) and pre-commit hooks. Invalid commits block PR merge.
+⚠️ This rule is enforced by [automated PR validation](https://github.com/acclaim-ai/contributing-action) and pre-commit hooks. Invalid commits block PR merge.
 
 #### Atomic Commits
 
@@ -273,7 +273,7 @@ test(auth): add jwt validation tests
 docs(auth): add jwt validation documentation
 ```
 
-> TIP: Use `/platform:create-commit` slash command to generate commit message.
+> TIP: Use `/platform:commits:create` slash command to generate commit message.
 
 ## PR Guidelines
 
@@ -319,7 +319,7 @@ docs(auth): add jwt validation documentation
 - ❌ `feat(tts): add language routing`
 - ❌ `Added GRPC options`
 
-⚠️ This rule is enforced by [automated PR validation](https://github.com/ToolsAiforia/contributing-action). Invalid PR titles block PR merge.
+⚠️ This rule is enforced by [automated PR validation](https://github.com/acclaim-ai/contributing-action). Invalid PR titles block PR merge.
 
 ### Special PR Prefixes
 
@@ -339,7 +339,7 @@ Some changes don't fit the standard `<ISSUE-ID>: <description>` format — they 
 
 ### Release PR Titles
 
-Release PRs are created by [release-action](https://github.com/ToolsAiforia/release-action) and platform delivery workflows. Their titles bypass the standard `<ISSUE-ID>: <description>` format. See [Unified Release & Platform Delivery Process](https://github.com/ToolsAiforia/platform-engineering/blob/main/docs/rfc/PlatformReleaseStandard.md) for details.
+Release PRs are created by [release-action](https://github.com/acclaim-ai/release-action) and platform delivery workflows. Their titles bypass the standard `<ISSUE-ID>: <description>` format. See [Unified Release & Platform Delivery Process](https://github.com/acclaim-ai/platform-engineering/blob/main/docs/rfc/PlatformReleaseStandard.md) for details.
 
 **Format:**
 
@@ -375,8 +375,7 @@ Release [<name>] <version>
 **Example (without release notes):**
 
 ```markdown
-Users can now specify preferred TTS engine per language in the request.
-This enables better voice quality for non-English languages.
+Users can now specify preferred TTS engine per language in the request. This enables better voice quality for non-English languages.
 
 - Added language_engine_map config option
 - Falls back to default engine if no mapping exists
@@ -391,8 +390,7 @@ Closes PLCORE-749
 **Example (with release notes):**
 
 ```markdown
-Users can now specify preferred TTS engine per language in the request.
-This enables better voice quality for non-English languages.
+Users can now specify preferred TTS engine per language in the request. This enables better voice quality for non-English languages.
 
 - Added language_engine_map config option
 - Falls back to default engine if no mapping exists
@@ -436,9 +434,9 @@ Part of PLCORE-100
 
 > **Prerequisite:** Magic words require the [GitHub↔Linear integration](https://linear.app/docs/github) to be configured for the repository. Status automation (e.g., Done on merge) is controlled by team settings at _Settings > Team > Issue statuses & automations_. Read more in the [Linear documentation](https://linear.app/docs/github#link-through-pull-requests).
 
-⚠️ This rule is enforced by [automated PR validation](https://github.com/ToolsAiforia/contributing-action). Invalid PR descriptions block PR merge.
+⚠️ This rule is enforced by [automated PR validation](https://github.com/acclaim-ai/contributing-action). Invalid PR descriptions block PR merge.
 
-> TIP: Use `/platform:create-pr` slash command to generate PR title and description.
+> TIP: Use `/platform:pr:create` slash command to generate PR title and description.
 
 ### Working with Draft PRs
 
@@ -485,8 +483,7 @@ Only one of the strategies can be used for the current repository. The reason wh
 **Title:** `PLCORE-749: Allow TTS engine selection by language parameter`
 
 ```
-Users can now specify preferred TTS engine per language in the request.
-This enables better voice quality for non-English languages.
+Users can now specify preferred TTS engine per language in the request. This enables better voice quality for non-English languages.
 
 - Added language_engine_map config option
 - Falls back to default engine if no mapping exists
@@ -501,8 +498,7 @@ Closes PLCORE-749
 **Title:** `PLCORE-715: Fix load balancing in TL-to-ASR gRPC calls`
 
 ```
-ASR requests were all hitting the same pod due to missing gRPC options.
-This caused uneven load distribution and occasional timeouts.
+ASR requests were all hitting the same pod due to missing gRPC options. This caused uneven load distribution and occasional timeouts.
 
 ---
 
@@ -514,8 +510,7 @@ Closes PLCORE-715
 **Title:** `VUX-20: Add protobuf messages for SIP playback duration reporting`
 
 ```
-SIP client needs to report how much audio was actually played back
-before user interruption. This data is required for billing accuracy.
+SIP client needs to report how much audio was actually played back before user interruption. This data is required for billing accuracy.
 
 - FinishTransferringPlaybackEvent
 - StartTransferringPlaybackEvent
@@ -530,8 +525,7 @@ Closes VUX-20
 **Title:** `PLCORE-605: Refactor Discrete Call service for grpclib-to-grpcio migration`
 
 ```
-Part of the grpclib-to-grpcio migration project. Discrete Call service
-is now fully migrated to grpcio.
+Part of the grpclib-to-grpcio migration project. Discrete Call service is now fully migrated to grpcio.
 
 - No functional changes
 - All existing tests pass
@@ -547,8 +541,7 @@ Closes PLCORE-605
 **Title:** `PLCORE-607: Remove legacy ASR provider integrations`
 
 ```
-Direct integrations with Google, Aiphoria v1, Audiogram, and Deepgram
-are no longer used. All ASR now goes through the unified provider interface.
+Direct integrations with Google, Acclaim v1, Audiogram, and Deepgram are no longer used. All ASR now goes through the unified provider interface.
 
 ---
 
@@ -580,15 +573,15 @@ Closes PLCORE-800
 
 ## Code Standards
 
-- [Platform Service Common Standard](https://github.com/ToolsAiforia/platform-engineering/blob/main/docs/rfc/PlatformServiceCommonStandard.md)
-- [Platform Service Logging Standard](https://github.com/ToolsAiforia/platform-engineering/blob/main/docs/rfc/PlatformServiceLoggingStandard.md)
-- [Unified Release & Platform Delivery Process](https://github.com/ToolsAiforia/platform-engineering/blob/main/docs/rfc/PlatformReleaseStandard.md)
+- [Platform Service Common Standard](https://github.com/acclaim-ai/platform-engineering/blob/main/docs/rfc/PlatformServiceCommonStandard.md)
+- [Platform Service Logging Standard](https://github.com/acclaim-ai/platform-engineering/blob/main/docs/rfc/PlatformServiceLoggingStandard.md)
+- [Unified Release & Platform Delivery Process](https://github.com/acclaim-ai/platform-engineering/blob/main/docs/rfc/PlatformReleaseStandard.md)
 
 ## Getting Help
 
 - **Technical questions:** Open an issue in Linear or ask your team lead in Slack
-- **General questions:** [Platform public channel in Slack](https://aiforia-hq.slack.com/archives/C06LH73K4UT) — `#platform`
-- **Code of Conduct issues:** [compliance@aiphoria.ai](mailto:compliance@aiphoria.ai)
+- **General questions:** [Platform public channel in Slack](https://acclaim-ai.slack.com/archives/C06LH73K4UT) — `#platform`
+- **Code of Conduct issues:** [compliance@acclaim.ai](mailto:compliance@acclaim.ai)
 
 ## FAQ
 
