@@ -63,6 +63,23 @@ class RemoteRepo(BaseModel):
     local_path: str | None = None
 
 
+class DeployComponent(BaseModel):
+    name: str
+    tag: str | None = None
+    file: str | None = None
+
+
+class DeploySnapshot(BaseModel):
+    id: str
+    cluster: str
+    created_at: datetime = Field(default_factory=datetime.now)
+    components: list[DeployComponent] = Field(default_factory=list)
+    commit_sha: str | None = None
+    commit_url: str | None = None
+    commit_message: str | None = None
+    commit_date: str | None = None
+
+
 class AppConfig(BaseModel):
     git_username: str = ""
     git_token: str = ""

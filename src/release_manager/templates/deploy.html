@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="p-6 max-w-6xl mx-auto">
+<div class="report-enter">
+
+    <!-- Description -->
+    <div class="mb-6 px-4 py-3.5 rounded-xl border border-indigo-100 dark:border-indigo-500/15
+                bg-indigo-50/50 dark:bg-indigo-500/5">
+        <p class="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+            <span class="font-semibold text-gray-800 dark:text-gray-200">Deploy Tracker</span> &mdash;
+            фиксация версий компонентов на окружении. Позволяет точно знать, какие версии были протестированы
+            и что передавать заказчику. Сделайте <span class="font-medium text-gray-800 dark:text-gray-200">Snapshot</span>,
+            чтобы сохранить текущее состояние, или <span class="font-medium text-gray-800 dark:text-gray-200">Copy MD</span>,
+            чтобы вставить таблицу в Linear-тикет. Сравните с релизом, чтобы увидеть расхождения.
+        </p>
+    </div>
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Deployed Versions</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Component versions from
+                <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">platform-deploy</code>
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- Cluster selector -->
+            <select id="cluster-select"
+                    class="px-3 py-2 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700
+                           bg-white dark:bg-[#1a1d26] text-gray-700 dark:text-gray-300
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+                <option value="aiphoria-qa" selected>aiphoria-qa</option>
+            </select>
+
+            <!-- Date picker -->
+            <input type="date" id="deploy-date"
+                   class="px-3 py-2 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700
+                          bg-white dark:bg-[#1a1d26] text-gray-700 dark:text-gray-300
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                   title="State as of date (empty = latest)">
+
+            <!-- Load -->
+            <button onclick="loadVersions()"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg
+                           text-white bg-indigo-500 hover:bg-indigo-600 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+                </svg>
+                Load
+            </button>
+
+            <div class="w-px h-6 bg-gray-200 dark:bg-gray-700"></div>
+
+            <!-- Compare with release -->
+            {% if releases %}
+            <select id="compare-release"
+                    onchange="rerender()"
+                    class="px-3 py-2 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700
+                           bg-white dark:bg-[#1a1d26] text-gray-700 dark:text-gray-300
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+                <option value="">Compare with release...</option>
+                {% for rel in releases %}
+                <option value="{{ rel.id }}">{{ rel.name }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+
+            <!-- Save Snapshot -->
+            <button onclick="saveSnapshot()"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg
+                           border border-emerald-200 dark:border-emerald-500/30 bg-white dark:bg-[#1a1d26]
+                           text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10
+                           transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/>
+                </svg>
+                Snapshot
+            </button>
+
+            <!-- Copy as Markdown -->
+            <button onclick="copyAsMarkdown()"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg
+                           border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1d26]
+                           text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#252830]
+                           transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/>
+                </svg>
+                Copy MD
+            </button>
+        </div>
+    </div>
+
+    <!-- Commit info -->
+    <div id="commit-info" class="hidden mb-4 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-800
+                bg-gray-50/50 dark:bg-[#1a1d26]">
+    </div>
+
+    <!-- Summary -->
+    <div id="summary" class="hidden mb-4"></div>
+
+    <!-- Table -->
+    <div id="deploy-table" class="rounded-xl border border-gray-200 dark:border-gray-800
+                bg-white dark:bg-[#1a1d26] overflow-hidden">
+        <div class="text-center py-16">
+            <p class="text-sm text-gray-400 dark:text-gray-500">Select a date and click <strong>Load</strong> to fetch deployed versions.</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Leave date empty for the latest state.</p>
+        </div>
+    </div>
+
+    <!-- Snapshots history -->
+    <div id="snapshots-section" class="mt-8">
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Snapshot History</h2>
+        <div id="snapshots-list">
+            {% if snapshots %}
+            {% for snap in snapshots %}
+            <div class="mb-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1d26] overflow-hidden"
+                 id="snapshot-{{ snap.id }}">
+                <div onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-90')"
+                     class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#252830] transition-colors cursor-pointer select-none">
+                    <div class="flex items-center gap-3">
+                        <svg class="chevron w-4 h-4 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
+                        </svg>
+                        <span class="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                            {{ snap.cluster }}
+                        </span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ snap.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                        {% if snap.commit_sha %}
+                        <span class="text-xs font-mono text-indigo-500">{{ snap.commit_sha }}</span>
+                        {% endif %}
+                        <span class="text-[10px] text-gray-400">{{ snap.components|length }} components</span>
+                    </div>
+                    <button onclick="event.stopPropagation(); deleteSnapshot('{{ snap.id }}')"
+                            class="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                            title="Delete snapshot">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="hidden">
+                    <table class="w-full text-left" style="table-layout:fixed">
+                        <colgroup>
+                            <col style="width:240px">
+                            <col>
+                            <col style="width:160px">
+                        </colgroup>
+                        <thead>
+                            <tr class="border-t border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#0f1117]/50">
+                                <th class="px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-500">Component</th>
+                                <th class="px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-500">Tag</th>
+                                <th class="px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-500">File</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                            {% for comp in snap.components %}
+                            <tr class="hover:bg-gray-50/50 dark:hover:bg-[#252830]/50 {{ 'opacity-40' if not comp.tag }}">
+                                <td class="px-4 py-1.5 text-xs font-medium text-gray-900 dark:text-gray-100">{{ comp.name }}</td>
+                                <td class="px-4 py-1.5 text-xs font-mono text-gray-600 dark:text-gray-400">{{ comp.tag or '—' }}</td>
+                                <td class="px-4 py-1.5 text-xs text-gray-400 truncate">{{ comp.file or '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p id="no-snapshots" class="text-xs text-gray-400 dark:text-gray-500">No snapshots yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+</div>
+
+<script>
+// Release data for comparison
+const _releases = {
+    {% for rel in releases %}
+    '{{ rel.id }}': {
+        name: '{{ rel.name }}',
+        components: {
+            {% for repo in rel.report.repos %}
+            '{{ repo.repo_name }}': { from_tag: '{{ repo.from_tag }}', to_tag: '{{ repo.to_tag }}' },
+            {% endfor %}
+        }
+    },
+    {% endfor %}
+};
+
+let _deployData = null;
+
+function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+function rerender() {
+    if (_deployData) renderTable(_deployData);
+}
+
+function renderTable(data) {
+    const table = document.getElementById('deploy-table');
+    const summary = document.getElementById('summary');
+    const commitEl = document.getElementById('commit-info');
+
+    // Commit info
+    if (data.commit) {
+        commitEl.classList.remove('hidden');
+        commitEl.innerHTML = `
+            <div class="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/>
+                </svg>
+                Latest commit:
+                <a href="${escapeHtml(data.commit.url)}" target="_blank"
+                   class="font-mono text-indigo-500 hover:underline">${escapeHtml(data.commit.sha)}</a>
+                <span class="text-gray-400">|</span>
+                ${escapeHtml(data.commit.message)}
+                <span class="text-gray-400">|</span>
+                ${escapeHtml(data.commit.date.substring(0, 10))}
+            </div>`;
+    }
+
+    // Get selected release for comparison
+    const relSelect = document.getElementById('compare-release');
+    const relId = relSelect ? relSelect.value : '';
+    const rel = relId ? _releases[relId] : null;
+
+    // Build table
+    let html = `<table class="w-full text-left" style="table-layout:fixed">
+        <colgroup>
+            <col style="width:220px">
+            <col style="width:140px">
+            <col style="width:140px">
+            <col>
+            <col style="width:100px">
+        </colgroup>
+        <thead>
+            <tr class="border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#0f1117]/50">
+                <th class="px-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-gray-500">Component</th>
+                <th class="px-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-gray-500">Deployed</th>
+                <th class="px-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-gray-500">${rel ? escapeHtml(_releases[relId].name) : 'Release'}</th>
+                <th class="px-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-gray-500">Source File</th>
+                <th class="px-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-gray-500">Status</th>
+            </tr>
+        </thead><tbody class="divide-y divide-gray-100 dark:divide-gray-800">`;
+
+    let matched = 0, differs = 0, notInRelease = 0;
+
+    for (const comp of data.components) {
+        const deployedTag = comp.tag || '—';
+        const relComp = rel ? rel.components[comp.name] : null;
+        const releaseTag = relComp ? relComp.to_tag : '—';
+
+        let statusBadge = '';
+        let rowClass = '';
+
+        if (rel && relComp) {
+            if (comp.tag === relComp.to_tag) {
+                matched++;
+                statusBadge = `<span class="inline-flex px-2 py-0.5 text-[11px] font-medium rounded-full
+                                      bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                                   Matched</span>`;
+            } else {
+                differs++;
+                statusBadge = `<span class="inline-flex px-2 py-0.5 text-[11px] font-medium rounded-full
+                                      bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                                   Differs</span>`;
+            }
+        } else if (rel) {
+            notInRelease++;
+            rowClass = 'opacity-40';
+        }
+
+        html += `<tr class="hover:bg-gray-50/50 dark:hover:bg-[#252830]/50 ${rowClass}">
+            <td class="px-4 py-2.5 text-xs font-medium text-gray-900 dark:text-gray-100">${escapeHtml(comp.name)}</td>
+            <td class="px-4 py-2.5 text-xs font-mono text-gray-600 dark:text-gray-400">${escapeHtml(deployedTag)}</td>
+            <td class="px-4 py-2.5 text-xs font-mono text-gray-600 dark:text-gray-400">${escapeHtml(releaseTag)}</td>
+            <td class="px-4 py-2.5 text-xs text-gray-400 dark:text-gray-500 truncate">${comp.file ? escapeHtml(comp.file) : '—'}</td>
+            <td class="px-4 py-2.5">${statusBadge}</td>
+        </tr>`;
+    }
+
+    html += '</tbody></table>';
+    table.innerHTML = html;
+
+    // Summary
+    if (rel) {
+        const total = matched + differs;
+        summary.classList.remove('hidden');
+        summary.innerHTML = `
+            <div class="flex items-center gap-4 text-xs">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10
+                             text-emerald-700 dark:text-emerald-400 font-medium">
+                    ${matched}/${total} matched
+                </span>
+                ${differs > 0 ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-500/10
+                             text-amber-700 dark:text-amber-400 font-medium">
+                    ${differs} differ
+                </span>` : ''}
+                <span class="text-gray-400">${data.components.length} total components</span>
+            </div>`;
+    } else {
+        summary.classList.add('hidden');
+    }
+}
+
+async function loadVersions() {
+    const cluster = document.getElementById('cluster-select').value;
+    const dateVal = document.getElementById('deploy-date').value;
+    const table = document.getElementById('deploy-table');
+
+    table.innerHTML = `
+        <div class="flex items-center justify-center py-16">
+            <svg class="animate-spin w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            <span class="ml-2 text-sm text-gray-500">Loading${dateVal ? ' for ' + dateVal : ''}...</span>
+        </div>`;
+
+    let url = `/api/deploy/versions?cluster=${encodeURIComponent(cluster)}`;
+    if (dateVal) url += `&until=${encodeURIComponent(dateVal)}`;
+
+    try {
+        const resp = await fetch(url);
+        if (!resp.ok) {
+            const text = await resp.text();
+            table.innerHTML = `<div class="text-center py-12">
+                <p class="text-sm text-red-500">${escapeHtml(text)}</p>
+            </div>`;
+            return;
+        }
+        _deployData = await resp.json();
+        renderTable(_deployData);
+    } catch (e) {
+        table.innerHTML = `<div class="text-center py-12">
+            <p class="text-sm text-red-500">${escapeHtml(e.message)}</p>
+        </div>`;
+    }
+}
+
+function copyAsMarkdown() {
+    if (!_deployData) return;
+
+    const cluster = document.getElementById('cluster-select').value;
+    const relSelect = document.getElementById('compare-release');
+    const relId = relSelect ? relSelect.value : '';
+    const rel = relId ? _releases[relId] : null;
+
+    const pad = (s, n) => s + ' '.repeat(Math.max(0, n - s.length));
+
+    // Collect rows
+    const rows = [];
+    for (const comp of _deployData.components) {
+        const deployed = comp.tag || '—';
+        const relComp = rel ? rel.components[comp.name] : null;
+        const releaseTag = relComp ? relComp.to_tag : '—';
+        let status = '';
+        if (rel && relComp) {
+            status = comp.tag === relComp.to_tag ? 'OK' : 'DIFF';
+        }
+        rows.push({name: comp.name, deployed, releaseTag, status});
+    }
+
+    // Calculate column widths
+    const hdr = {name: 'Component', deployed: 'Deployed', releaseTag: rel ? _releases[relId].name : 'Release', status: 'Status'};
+    const w = {
+        name: Math.max(hdr.name.length, ...rows.map(r => r.name.length)),
+        deployed: Math.max(hdr.deployed.length, ...rows.map(r => r.deployed.length)),
+        releaseTag: Math.max(hdr.releaseTag.length, ...rows.map(r => r.releaseTag.length)),
+        status: Math.max(hdr.status.length, ...rows.map(r => r.status.length)),
+    };
+
+    let md = '';
+
+    // Header
+    if (_deployData.commit) {
+        md += `> Cluster: \`${cluster}\` | Commit: [${_deployData.commit.sha}](${_deployData.commit.url}) | ${_deployData.commit.date.substring(0, 10)}\n\n`;
+    }
+
+    md += `| ${pad(hdr.name, w.name)} | ${pad(hdr.deployed, w.deployed)} | ${pad(hdr.releaseTag, w.releaseTag)} | ${pad(hdr.status, w.status)} |\n`;
+    md += `| ${'-'.repeat(w.name)} | ${'-'.repeat(w.deployed)} | ${'-'.repeat(w.releaseTag)} | ${'-'.repeat(w.status)} |\n`;
+
+    for (const r of rows) {
+        md += `| ${pad(r.name, w.name)} | ${pad(r.deployed, w.deployed)} | ${pad(r.releaseTag, w.releaseTag)} | ${pad(r.status, w.status)} |\n`;
+    }
+
+    navigator.clipboard.writeText(md).then(() => {
+        showToast('Copied as Markdown', 'success');
+    }).catch(() => {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = md;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('Copied as Markdown', 'success');
+    });
+}
+
+async function saveSnapshot() {
+    if (!_deployData) { showToast('Load versions first', 'error'); return; }
+    const cluster = document.getElementById('cluster-select').value;
+    try {
+        const resp = await fetch('/api/deploy/snapshots', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                cluster,
+                components: _deployData.components,
+                commit: _deployData.commit,
+            })
+        });
+        if (!resp.ok) { showToast('Failed to save', 'error'); return; }
+        showToast('Snapshot saved', 'success');
+        window.location.reload();
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+async function deleteSnapshot(id) {
+    if (!confirm('Delete this snapshot?')) return;
+    try {
+        const resp = await fetch(`/api/deploy/snapshots/${id}`, {method: 'DELETE'});
+        if (resp.ok) {
+            const el = document.getElementById(`snapshot-${id}`);
+            if (el) el.remove();
+            showToast('Snapshot deleted', 'success');
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+// Set date to today by default
+document.getElementById('deploy-date').value = new Date().toISOString().slice(0, 10);
+</script>
+{% endblock %}

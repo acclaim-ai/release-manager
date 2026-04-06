@@ -47,6 +47,7 @@ def create_app() -> FastAPI:
     app.state.templates = templates
     app.state.last_report = None
     app.state.releases = []
+    app.state.deploy_snapshots = []
     app.state.app_config = remote.load_config(settings.repos_dir)
 
     app.include_router(router)

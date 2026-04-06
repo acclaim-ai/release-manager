@@ -7,6 +7,8 @@ from fastapi.responses import HTMLResponse
 
 from release_manager.models import (
     AppConfig,
+    DeployComponent,
+    DeploySnapshot,
     Release,
     ReleaseReport,
     RemoteRepo,
@@ -14,7 +16,7 @@ from release_manager.models import (
     RepoSelection,
     TagInfo,
 )
-from release_manager.services import exporter, git_ops, linear, remote, scanner
+from release_manager.services import deploy, exporter, git_ops, linear, remote, scanner
 from release_manager.settings import settings
 
 router = APIRouter()
@@ -134,6 +136,21 @@ async def releases_page(request: Request):
             "request": request,
             "releases": list(reversed(releases)),
             "active_page": "releases",
+        },
+    )
+
+
+@router.get("/deploy", response_class=HTMLResponse)
+async def deploy_page(request: Request):
+    releases: list[Release] = request.app.state.releases
+    snapshots: list[DeploySnapshot] = request.app.state.deploy_snapshots
+    return _templates(request).TemplateResponse(
+        "deploy.html",
+        {
+            "request": request,
+            "releases": list(reversed(releases)),
+            "snapshots": list(reversed(snapshots)),
+            "active_page": "deploy",
         },
     )
 
@@ -648,6 +665,71 @@ async def api_linear_issues(request: Request):
     if not keys:
         return {}
     return linear.fetch_issues(keys, config.linear_api_key)
+
+
+# ── Deploy API ─────────────────────────────────────────────
+
+
+@router.get("/api/deploy/versions")
+async def api_deploy_versions(request: Request):
+    """Fetch deployed versions from platform-deploy repo."""
+    config: AppConfig = request.app.state.app_config
+    if not config.git_token:
+        return Response("GitHub token not configured", status_code=400)
+
+    cluster = request.query_params.get("cluster", "aiphoria-qa")
+    until = request.query_params.get("until")  # ISO date: 2026-03-15
+    try:
+        result = deploy.fetch_deployed_versions(
+            owner="ToolsAiforia",
+            repo="platform-deploy",
+            cluster_path=f"clusters/{cluster}",
+            token=config.git_token,
+            until=until,
+        )
+        return result
+    except Exception as e:
+        return Response(f"Failed to fetch: {e}", status_code=500)
+
+
+@router.post("/api/deploy/snapshots")
+async def api_save_deploy_snapshot(request: Request):
+    """Save a deploy snapshot from the current data."""
+    body = await request.json()
+    components = [
+        DeployComponent(name=c["name"], tag=c.get("tag"), file=c.get("file"))
+        for c in body.get("components", [])
+    ]
+    commit = body.get("commit")
+    snapshot = DeploySnapshot(
+        id=uuid4().hex[:12],
+        cluster=body.get("cluster", "aiphoria-qa"),
+        components=components,
+        commit_sha=commit.get("sha") if commit else None,
+        commit_url=commit.get("url") if commit else None,
+        commit_message=commit.get("message") if commit else None,
+        commit_date=commit.get("date") if commit else None,
+    )
+    request.app.state.deploy_snapshots.append(snapshot)
+    return {"id": snapshot.id}
+
+
+@router.get("/api/deploy/snapshots")
+async def api_list_deploy_snapshots(request: Request):
+    """List all saved deploy snapshots."""
+    snapshots: list[DeploySnapshot] = request.app.state.deploy_snapshots
+    return [s.model_dump(mode="json") for s in reversed(snapshots)]
+
+
+@router.delete("/api/deploy/snapshots/{snapshot_id}")
+async def api_delete_deploy_snapshot(snapshot_id: str, request: Request):
+    """Delete a deploy snapshot."""
+    snapshots: list[DeploySnapshot] = request.app.state.deploy_snapshots
+    for i, s in enumerate(snapshots):
+        if s.id == snapshot_id:
+            snapshots.pop(i)
+            return {"ok": True}
+    return Response("Not found", status_code=404)
 
 
 # ── HTMX Partials ─────────────────────────────────────────────
